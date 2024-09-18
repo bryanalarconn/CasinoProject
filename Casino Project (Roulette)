@@ -19,7 +19,7 @@ def getGameResult(SLOTS : str, SLOTCOLORS : str) -> str:
     slotColor = SLOTCOLORS
     marbleNum = random.choice(SLOTS)
     marbleColor = random.choice(SLOTCOLORS)
-    gameResult = str(marbleNum + marbleColor)
+    gameResult = str(marbleNum + " " + marbleColor)
     return gameResult
 
 # Function matches both user's guess and game result and determines if the user won
@@ -47,6 +47,7 @@ def main():
     print("Where would like to bet?")
     userGuess = getUserGuess(slots, slotcolors)
     gameResult = getGameResult(slots, slotcolors)
+    print(gameResult)
     matchResult = getMatch(slots, slotcolors, userGuess, gameResult, match, matchStatement)
 
     playAgain = str(input("Would you like to play again, yes or no?"))
@@ -54,6 +55,7 @@ def main():
     while playAgain == "Yes":
         userGuess = getUserGuess(slots, slotcolors)
         gameResult = getGameResult(slots, slotcolors)
+        print(gameResult)
         matchResult = getMatch(slots, slotcolors, userGuess, gameResult, match, matchStatement)
         playAgain = str(input("Would you like to play again, yes or no?"))
 
