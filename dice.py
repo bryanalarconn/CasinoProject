@@ -9,7 +9,7 @@ pygame.init()
 screen_width = 700
 screen_height = 400
 screen = pygame.display.set_mode((screen_width, screen_height))
-pygame.display.set_caption("Street Dice Game")
+pygame.display.set_caption("Dice Game")
 
 # Define colors
 WHITE = (255, 255, 255)
@@ -135,7 +135,7 @@ def game_loop():
 
         # Show the welcome message or reset prompt if the game hasn't started or has ended
         if not game_started and not game_reset and not welcome_screen_shown:
-            display_text("Welcome to the Street Dice Game!", 100, 50)
+            display_text("Welcome to the Dice Game!", 100, 50)
             display_text("Press Space to Roll Dice", 100, 280)
             # Display game rules
             display_text("Rules:", 100, 110)
