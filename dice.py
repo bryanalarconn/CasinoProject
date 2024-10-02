@@ -9,7 +9,7 @@ pygame.init()
 screen_width = 700
 screen_height = 400
 screen = pygame.display.set_mode((screen_width, screen_height))
-pygame.display.set_caption("Dice Game")
+pygame.display.set_caption("Street Dice Game")
 
 # Define colors
 WHITE = (255, 255, 255)
@@ -22,8 +22,10 @@ font = pygame.font.Font(None, 36)
 def roll_dice():
     return [random.randint(1, 6) for _ in range(3)]
 
-# Function to display text
-def display_text(text, x, y):
+# Function to display text and clear area before
+def display_text(text, x, y, clear_rect=None):
+    if clear_rect:
+        pygame.draw.rect(screen, WHITE, clear_rect)  # Clear the previous area
     render_text = font.render(text, True, BLACK)
     screen.blit(render_text, (x, y))
     pygame.display.update()
@@ -43,12 +45,29 @@ def check_roll(dice):
         return "auto_loss"
     else:
         return None
-    
-# Function to display roll result
-def display_roll(player, dice, result, x, y):
+
+# Function to display roll result and clear old roll area
+def display_roll(player, dice, result, x, y, clear_rect):
     dice_str = f"{player} rolls = [ {dice[0]} , {dice[1]} , {dice[2]} ] : {result}"
-    display_text(dice_str, x, y)
+    display_text(dice_str, x, y, clear_rect=clear_rect)
+
+# Function to re-roll until a valid result
+def roll_until_valid(player, clear_rect):
+    dice = roll_dice()
+    result = check_roll(dice)
     
+    while result is None:  # Keep rolling until valid result
+        display_roll(player, dice, "Invalid roll. Rolling again...", 100, 150 if player == "Player" else 200, clear_rect=clear_rect)
+        pygame.display.update()
+        time.sleep(1)
+        dice = roll_dice()
+        result = check_roll(dice)
+    
+    display_roll(player, dice, result, 100, 150 if player == "Player" else 200, clear_rect=clear_rect)
+    pygame.display.update()
+    time.sleep(2)  # Pause before proceeding
+    return result
+
 # Main game loop
 def game_loop():
     running = True
@@ -76,58 +95,34 @@ def game_loop():
                     game_started = True
                     welcome_screen_shown = False
                     
-                    # Player rolls first
-                    player_dice = roll_dice()
-                    player_result = check_roll(player_dice)
-                    display_roll("Player", player_dice, player_result, 100, 150)  # Display full dice roll and result
-                    pygame.display.update()
-                    time.sleep(2)  # Wait for 2 seconds before showing dealer's roll
+                    # Define larger areas to clear for player and dealer rolls
+                    player_clear_rect = pygame.Rect(100, 150, 800, 40)  # 500 width should cover the whole sentence
+                    dealer_clear_rect = pygame.Rect(100, 200, 800, 40)
                     
-                   # Dealer rolls
-                    dealer_dice = roll_dice()
-                    dealer_result = check_roll(dealer_dice)
-                    display_roll("Dealer", dealer_dice, dealer_result, 100, 200)  # Display full dice roll and result
-                    pygame.display.update()
-                    time.sleep(1)  # Wait for 1 second before showing the result
+                    # Player rolls until valid result
+                    player_result = roll_until_valid("Player", player_clear_rect)
+                    
+                    # Dealer rolls until valid result
+                    dealer_result = roll_until_valid("Dealer", dealer_clear_rect)
 
-                    # If both player and dealer roll None, prompt for a new game
-                    if player_result is None and dealer_result is None:
-                        display_text("No valid rolls.", 100, 250)
-                        time.sleep(2)
-                        
-                    # Case: Player rolls valid result but dealer rolls None
-                    elif player_result is not None and dealer_result is None:
-                        display_text("Roll again. Dealer got no valid roll.", 100, 250)
-                        time.sleep(2)
-
-                    # Case: Dealer rolls valid result but player rolls None
-                    elif dealer_result is not None and player_result is None:
-                        display_text("Roll again. You got no valid roll.", 100, 250)
-                        time.sleep(2)
-
-                    else:
-                        # Determine the winner
-                        if player_result == "auto_win" or dealer_result == "auto_loss":
-                            display_text("Player Wins!", 100, 250)
-                            time.sleep(2)
-                        elif dealer_result == "auto_win" or player_result == "auto_loss":
-                            display_text("Dealer Wins!", 100, 250)
-                            time.sleep(2)
-                        elif isinstance(player_result, int) and isinstance(dealer_result, int):
-                            # Only compare if both results are valid numbers
-                            if player_result > dealer_result:
-                                display_text("Player Wins!", 100, 250)
-                                time.sleep(2)
-                            elif dealer_result > player_result:
-                                display_text("Dealer Wins!", 100, 250)
-                                time.sleep(2)
-                            else:
-                                display_text("It's a draw!", 100, 250)
-                                time.sleep(2)
+                    # Determine the winner
+                    if player_result == "auto_win" or dealer_result == "auto_loss":
+                        display_text("Player Wins!", 100, 250, clear_rect=pygame.Rect(100, 250, 500, 40))
+                    elif dealer_result == "auto_win" or player_result == "auto_loss":
+                        display_text("Dealer Wins!", 100, 250, clear_rect=pygame.Rect(100, 250, 500, 40))
+                    elif isinstance(player_result, int) and isinstance(dealer_result, int):
+                        # Only compare if both results are valid numbers
+                        if player_result > dealer_result:
+                            display_text("Player Wins!", 100, 250, clear_rect=pygame.Rect(100, 250, 500, 40))
+                        elif dealer_result > player_result:
+                            display_text("Dealer Wins!", 100, 250, clear_rect=pygame.Rect(100, 250, 500, 40))
+                        else:
+                            display_text("It's a draw!", 100, 250, clear_rect=pygame.Rect(100, 250, 500, 40))
                     pygame.display.update()
                     winner_shown = True
                     game_reset = True
-                    
+                    time.sleep(2)
+
                 # Reset the game when the player presses space after the result is shown
                 elif game_reset:
                     game_reset = False
@@ -135,7 +130,7 @@ def game_loop():
 
         # Show the welcome message or reset prompt if the game hasn't started or has ended
         if not game_started and not game_reset and not welcome_screen_shown:
-            display_text("Welcome to the Dice Game!", 100, 50)
+            display_text("Welcome to the Street Dice Game!", 100, 50)
             display_text("Press Space to Roll Dice", 100, 280)
             # Display game rules
             display_text("Rules:", 100, 110)
