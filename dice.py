@@ -138,7 +138,7 @@ def game_loop():
             pygame.display.update()
             winner_shown = True
             game_reset = True
-            time.sleep(2)
+            time.sleep(3)
             first_round = False  # Set to False after the first round
 
     while running:
