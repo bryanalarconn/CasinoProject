@@ -1,5 +1,6 @@
 import pygame
 import subprocess
+from BJGUI import main
 
 # Initialize Pygame
 pygame.init()
@@ -73,7 +74,7 @@ def main_menu():
                         if text == "Play Roulette":
                             run_game('roulette.py')
                         elif text == "Play Blackjack":
-                            run_game('BJGUI.py')
+                            main()
                         elif text == "Play Dice":
                             run_game('dice.py')
                         elif text == "Exit":
