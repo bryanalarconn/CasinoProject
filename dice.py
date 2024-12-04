@@ -5,6 +5,22 @@ import time
 # Initialize Pygame
 pygame.init()
 
+# Load Dice Images
+dice_images = [pygame.image.load(f"dice_sides/dice_{i}.png") for i in range(1, 7)]
+# Resize Dice Images
+dice_images = [pygame.transform.scale(img, (100, 100)) for img in dice_images]
+
+# Initialize Pygame's mixer
+pygame.mixer.init()
+
+# Load sound effects
+dice_roll_sound = pygame.mixer.Sound("dice_roll.mp3")  # Dice rolling sound
+win_sound = pygame.mixer.Sound("win_sound.mp3")        # Winning sound
+lose_sound = pygame.mixer.Sound("lose_sound.mp3")      # Losing sound
+win_sound.set_volume(1.0)
+lose_sound.set_volume(1.0)
+
+
 # Set up display
 screen_width = 700
 screen_height = 400
@@ -27,6 +43,46 @@ font = pygame.font.Font(None, 36)
 # Function to roll dice
 def roll_dice():
     return [random.randint(1, 6) for _ in range(3)]
+
+def roll_dice_animation():
+    clock = pygame.time.Clock()
+    rolling_time = 1.5  # Animation duration in seconds
+    start_time = time.time()
+    
+    dice_roll_sound.play()
+
+    dice1_value, dice2_value, dice3_value = 1, 1, 1  # Initial values
+    
+    while time.time() - start_time < rolling_time:
+        # Random dice faces
+        dice1_value = random.randint(1, 6)
+        dice2_value = random.randint(1, 6)
+        dice3_value = random.randint(1, 6)
+        
+        # Draw Background
+        screen.blit(background_image, (0, 0))
+        
+        # Draw Dice Images
+        screen.blit(dice_images[dice1_value - 1], (150, 150))  # Player dice 1
+        screen.blit(dice_images[dice2_value - 1], (300, 150))  # Player dice 2
+        screen.blit(dice_images[dice3_value - 1], (450, 150))  # Player dice 3
+        
+        # Update Display
+        pygame.display.flip()
+        
+        # Control Frame Rate
+        clock.tick(30)
+    
+     # Final Dice Results (Displayed for 2 seconds)
+    screen.blit(background_image, (0, 0))  # Clear background
+    screen.blit(dice_images[dice1_value - 1], (150, 150))
+    screen.blit(dice_images[dice2_value - 1], (300, 150))
+    screen.blit(dice_images[dice3_value - 1], (450, 150))
+    pygame.display.flip()  # Update display to show the final dice
+    time.sleep(1)  # Pause to show final dice for 2 seconds
+    
+    # Final Result
+    return [dice1_value, dice2_value, dice3_value]
 
 # Function to display text
 def display_text(text, x, y):
@@ -56,22 +112,18 @@ def display_roll(player, dice, result, x, y):
 
 # Function to re-roll until a valid result
 def roll_until_valid(player, y_position):
-    dice = roll_dice()
-    result = check_roll(dice)
-    
-    while result is None:  # Keep rolling until valid result
-        # Clear the background for the roll
-        screen.blit(background_image, (0, 0))  
-        # Display the invalid roll with the dice values
-        display_roll(player, dice, "Invalid", 100, y_position)
-        display_text(f"{player} is rolling again...", 100, y_position + 40)
-        pygame.display.update()
-        time.sleep(2)
-        dice = roll_dice()
+    while True:
+        dice = roll_dice_animation()  # Use the animation here
         result = check_roll(dice)
-
-    screen.blit(background_image, (0, 0))  # Clear background before showing final result
-    return dice, result  # Return both the dice and the final result
+        
+        if result is not None:
+            # Display final roll
+            screen.blit(background_image, (0, 0))
+            for i, value in enumerate(dice):
+                screen.blit(dice_images[value - 1], (100 + i * 150, y_position))
+            pygame.display.flip()
+            time.sleep(2)  # Pause before returning
+            return dice, result
 
 # Function to create a button
 def draw_button(text, x, y, width, height, inactive_color, active_color, action=None):
@@ -123,14 +175,18 @@ def game_loop():
 
             # Determine the winner after both rolls
             if player_result == "auto_win" or dealer_result == "auto_loss":
+                win_sound.play()
                 display_text("Player Wins!", 100, 250)
             elif dealer_result == "auto_win" or player_result == "auto_loss":
+                lose_sound.play()
                 display_text("Dealer Wins!", 100, 250)
             elif isinstance(player_result, int) and isinstance(dealer_result, int):
                 # Only compare if both results are valid numbers
                 if player_result > dealer_result:
+                    win_sound.play()
                     display_text("Player Wins!", 100, 250)
                 elif dealer_result > player_result:
+                    lose_sound.play()
                     display_text("Dealer Wins!", 100, 250)
                 else:
                     display_text("It's a draw!", 100, 250)
