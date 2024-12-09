@@ -5,234 +5,202 @@ import time
 # Initialize Pygame
 pygame.init()
 
-# Load Dice Images
-dice_images = [pygame.image.load(f"dice_sides/dice_{i}.png") for i in range(1, 7)]
-# Resize Dice Images
-dice_images = [pygame.transform.scale(img, (100, 100)) for img in dice_images]
-
-# Initialize Pygame's mixer
-pygame.mixer.init()
-
-# Load sound effects
-dice_roll_sound = pygame.mixer.Sound("dice_roll.mp3")  # Dice rolling sound
-win_sound = pygame.mixer.Sound("win_sound.mp3")        # Winning sound
-lose_sound = pygame.mixer.Sound("lose_sound.mp3")      # Losing sound
-win_sound.set_volume(1.0)
-lose_sound.set_volume(1.0)
-
-
-# Set up display
-screen_width = 700
-screen_height = 400
-screen = pygame.display.set_mode((screen_width, screen_height))
-pygame.display.set_caption("Street Dice Game")
-
-# Load background image
-background_image = pygame.image.load('dice_game_background.jpeg')  # Make sure this file exists
-background_image = pygame.transform.scale(background_image, (screen_width, screen_height))
-
-# Define colors
+# Constants
+WIDTH, HEIGHT = 800, 600
+GREEN = (53, 101, 77)
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
-GREEN = (0, 255, 0)
 RED = (255, 0, 0)
+GOLD = (255, 255, 0) 
+YELLOW = (255, 215, 0)
 
-# Load font
-font = pygame.font.Font(None, 36)
+# Set up display
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+
+# Load Dice Images
+dice_images = [pygame.image.load(f"images/dice_{i}.png") for i in range(1, 7)]
+dice_images = [pygame.transform.scale(img, (100, 100)) for img in dice_images]
+
+# Load fonts
+title_font = pygame.font.SysFont("Comic Sans MS", 60) 
+font = pygame.font.SysFont("Comic Sans MS", 36)      
 
 # Function to roll dice
 def roll_dice():
     return [random.randint(1, 6) for _ in range(3)]
 
+# Dice rolling animation
 def roll_dice_animation():
     clock = pygame.time.Clock()
-    rolling_time = 1.5  # Animation duration in seconds
+    rolling_time = 1.5  # Roll for 1.5 seconds
     start_time = time.time()
-    
-    dice_roll_sound.play()
 
-    dice1_value, dice2_value, dice3_value = 1, 1, 1  # Initial values
-    
+    dice1_value, dice2_value, dice3_value = 1, 1, 1  # Initial dice values
+
     while time.time() - start_time < rolling_time:
-        # Random dice faces
+        # Generate random dice faces for animation
         dice1_value = random.randint(1, 6)
         dice2_value = random.randint(1, 6)
         dice3_value = random.randint(1, 6)
-        
-        # Draw Background
-        screen.blit(background_image, (0, 0))
-        
-        # Draw Dice Images
-        screen.blit(dice_images[dice1_value - 1], (150, 150))  # Player dice 1
-        screen.blit(dice_images[dice2_value - 1], (300, 150))  # Player dice 2
-        screen.blit(dice_images[dice3_value - 1], (450, 150))  # Player dice 3
-        
-        # Update Display
+
+        # Clear screen with background color
+        screen.fill(GREEN)
+
+        # Display dice in triangular layout
+        screen.blit(dice_images[dice1_value - 1], (WIDTH // 2 - 125, 200))  # Top-left dice
+        screen.blit(dice_images[dice2_value - 1], (WIDTH // 2 + 25, 200))   # Top-right dice
+        screen.blit(dice_images[dice3_value - 1], (WIDTH // 2 - 50, 350))   # Bottom-center dice
+
+        # Update display
         pygame.display.flip()
-        
-        # Control Frame Rate
-        clock.tick(30)
-    
-     # Final Dice Results (Displayed for 2 seconds)
-    screen.blit(background_image, (0, 0))  # Clear background
-    screen.blit(dice_images[dice1_value - 1], (150, 150))
-    screen.blit(dice_images[dice2_value - 1], (300, 150))
-    screen.blit(dice_images[dice3_value - 1], (450, 150))
-    pygame.display.flip()  # Update display to show the final dice
-    time.sleep(1)  # Pause to show final dice for 2 seconds
-    
-    # Final Result
+        clock.tick(15)  
+
+    # Final dice results
     return [dice1_value, dice2_value, dice3_value]
 
-# Function to display text
-def display_text(text, x, y):
-    render_text = font.render(text, True, BLACK)
-    screen.blit(render_text, (x, y))
 
-# Checking dice roll
+# Function to display text
+def display_text(text, x, y, font, color=WHITE):
+    render_text = font.render(text, True, color)
+    text_rect = render_text.get_rect(center=(x, y))  
+    screen.blit(render_text, text_rect)
+
+
+# Function to check dice roll
 def check_roll(dice):
-    """Check the result of a dice roll."""
     dice_counts = {i: dice.count(i) for i in dice}
     pairs = [num for num, count in dice_counts.items() if count == 2]
-    
+
     if len(pairs) == 1:
-        # Return the odd die out as the score
         return [num for num in dice if num != pairs[0]][0]
     elif sorted(dice) == [4, 5, 6]:
         return "auto_win"
     elif sorted(dice) == [1, 2, 3]:
         return "auto_loss"
-    else:
-        return None
+    return None
 
-# Function to display roll result
-def display_roll(player, dice, result, x, y):
-    dice_str = f"{player} rolls = [ {dice[0]} , {dice[1]} , {dice[2]} ] : {result}"
-    display_text(dice_str, x, y)
 
-# Function to re-roll until a valid result
-def roll_until_valid(player, y_position):
+# Display results
+def display_dice_results(player_dice, dealer_dice):
+    # Clear screen with background color
+    screen.fill(GREEN)
+
+    # Define the layout constants
+    section_width = WIDTH // 2 
+    top_dice_spacing = 75  
+    bottom_dice_y = 350  
+    dice_size = dice_images[0].get_width()  
+
+    # Player Side
+    player_x_center = section_width // 2
+    display_text("Player", player_x_center, 100, font)
+    # Dice positions
+    screen.blit(dice_images[player_dice[0] - 1], (player_x_center - dice_size - (top_dice_spacing // 2), 200))
+    screen.blit(dice_images[player_dice[1] - 1], (player_x_center + (top_dice_spacing // 2), 200))
+    screen.blit(dice_images[player_dice[2] - 1], (player_x_center - dice_size // 2, bottom_dice_y))
+
+    # Dealer Side
+    dealer_x_center = 3 * section_width // 2
+    display_text("Dealer", dealer_x_center, 100, font)
+    # Dice positions
+    screen.blit(dice_images[dealer_dice[0] - 1], (dealer_x_center - dice_size - (top_dice_spacing // 2), 200))
+    screen.blit(dice_images[dealer_dice[1] - 1], (dealer_x_center + (top_dice_spacing // 2), 200))
+    screen.blit(dice_images[dealer_dice[2] - 1], (dealer_x_center - dice_size // 2, bottom_dice_y))
+
+
+def dealer_ai():
     while True:
-        dice = roll_dice_animation()  # Use the animation here
-        result = check_roll(dice)
-        
-        if result is not None:
-            # Display final roll
-            screen.blit(background_image, (0, 0))
-            for i, value in enumerate(dice):
-                screen.blit(dice_images[value - 1], (100 + i * 150, y_position))
-            pygame.display.flip()
-            time.sleep(2)  # Pause before returning
-            return dice, result
+        dealer_dice = roll_dice()  # Roll three dice
+        result = check_roll(dealer_dice)
+        if result is not None:  # Only return valid results
+            return dealer_dice, result
 
-# Function to create a button
-def draw_button(text, x, y, width, height, inactive_color, active_color, action=None):
-    mouse = pygame.mouse.get_pos()  # Get mouse position
-    click = pygame.mouse.get_pressed()  # Check for mouse click
-    
-    if x + width > mouse[0] > x and y + height > mouse[1] > y:  # If mouse is over button
-        pygame.draw.rect(screen, active_color, (x, y, width, height))
-        if click[0] == 1 and action is not None:  # If left mouse button is clicked
-            action()
-    else:
-        pygame.draw.rect(screen, inactive_color, (x, y, width, height))
 
-    # Display button text
-    button_text = font.render(text, True, BLACK)
-    screen.blit(button_text, (x + (width // 4), y + (height // 4)))
-
-# Main game loop
-def game_loop():
+def diceMain():
     running = True
     game_started = False
-    first_round = True  # Track if it’s the first round or not
+    winner_shown = False
     player_result = None
     dealer_result = None
-    winner_shown = False
-    game_reset = False
-    
+
     def roll_dice_action():
-        nonlocal game_started, player_result, dealer_result, winner_shown, game_reset, first_round
-        if not game_started:
-            # Start the game
-            player_result = None
-            dealer_result = None
-            winner_shown = False
-            game_started = True
+        nonlocal game_started, player_result, dealer_result, winner_shown
+        game_started = True
 
-            # Player rolls until valid result
-            player_dice, player_result = roll_until_valid("Player", 150)
-            screen.blit(background_image, (0, 0))  # Redraw the background
-            display_roll("Player", player_dice, player_result, 100, 150)  # Display player's roll
-            pygame.display.update()
-            time.sleep(2)  # Pause before dealer rolls
+        # Player rolls dice
+        player_dice = roll_dice_animation()
+        player_result = check_roll(player_dice)
 
-            # Dealer rolls until valid result
-            dealer_dice, dealer_result = roll_until_valid("Dealer", 200)
-            screen.blit(background_image, (0, 0))  # Redraw the background
-            display_roll("Player", player_dice, player_result, 100, 150)  # Redraw player's roll
-            display_roll("Dealer", dealer_dice, dealer_result, 100, 200)  # Display dealer's roll
+        # Dealer AI rolls dice
+        dealer_dice, dealer_result = dealer_ai()
 
-            # Determine the winner after both rolls
-            if player_result == "auto_win" or dealer_result == "auto_loss":
-                win_sound.play()
-                display_text("Player Wins!", 100, 250)
-            elif dealer_result == "auto_win" or player_result == "auto_loss":
-                lose_sound.play()
-                display_text("Dealer Wins!", 100, 250)
-            elif isinstance(player_result, int) and isinstance(dealer_result, int):
-                # Only compare if both results are valid numbers
-                if player_result > dealer_result:
-                    win_sound.play()
-                    display_text("Player Wins!", 100, 250)
-                elif dealer_result > player_result:
-                    lose_sound.play()
-                    display_text("Dealer Wins!", 100, 250)
-                else:
-                    display_text("It's a draw!", 100, 250)
-            
-            pygame.display.update()
-            winner_shown = True
-            game_reset = True
-            time.sleep(3)
-            first_round = False  # Set to False after the first round
+        # Display the results
+        display_dice_results(player_dice, dealer_dice)
+
+        # Determine winner and display results
+        if player_result == "auto_win" or dealer_result == "auto_loss":
+            display_text("Player Wins!", WIDTH // 2, 500, font)
+        elif dealer_result == "auto_win" or player_result == "auto_loss":
+            display_text("Dealer Wins!", WIDTH // 2, 500, font)
+        elif isinstance(player_result, int) and isinstance(dealer_result, int):
+            if player_result > dealer_result:
+                display_text("Player Wins!", WIDTH // 2, 500, font)
+            elif dealer_result > player_result:
+                display_text("Dealer Wins!", WIDTH // 2, 500, font)
+            else:
+                display_text("It's a draw!", WIDTH // 2, 500, font)
+
+        winner_shown = True
+        pygame.display.update()
+        time.sleep(3)
+
+    def return_to_menu():
+        nonlocal running
+        running = False
 
     while running:
-        # Check for quit event
+        screen.fill(GREEN)
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
 
-        # Show the welcome message and rules if it’s the first round and game hasn't started
+            # Check for SPACE bar press to roll dice
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                if not game_started or winner_shown:
+                    roll_dice_action()
+
         if not game_started:
-            screen.blit(background_image, (0, 0))  # Draw the background image
-            if first_round:
-                # Show welcome message and rules on the first round
-                display_text("Welcome to the Street Dice Game!", 100, 50)
-                display_text("Click the button to Roll Dice", 100, 280)
-                display_text("Rules:", 100, 110)
-                display_text("- Roll 3 dice. Odd die out is your score.", 100, 140)
-                display_text("- [4, 5, 6] = automatic win.", 100, 170)
-                display_text("- [1, 2, 3] = automatic loss.", 100, 200)
-                display_text("- Highest score wins!", 100, 230)
-            else:
-                # Show "Click the button to roll again" after the first round
-                display_text("Click the button to roll again", 100, 100)
-            # Draw the button for rolling dice
-            draw_button("Roll Dice", 250, 320, 200, 50, GREEN, RED, roll_dice_action)
-        else:
-            screen.blit(background_image, (0, 0))  # Draw the background image
+            # Display title
+            display_text("Dice Game", WIDTH // 2, 50, title_font)
+            display_text("Press SPACE to Roll Dice", WIDTH // 2, 150, font)
 
-            # After the game has started, handle the dice rolls and results
-            if winner_shown and game_reset:
-                # Reset the game and allow for a new round
-                game_started = False
-                game_reset = False
+            # Display dice layout
+            for i, img in enumerate(dice_images[:3]):
+                if i < 2:
+                    screen.blit(img, (WIDTH // 2 - 125 + i * 150, 200))  # Top row
+                else:
+                    screen.blit(img, (WIDTH // 2 - 50, 350))  # Bottom row
+        elif winner_shown:
+            display_text("Press SPACE to Play Again", WIDTH // 2, 150, font)
 
-        pygame.display.update()  # Update the display after everything has been drawn
+        # Add MENU button
+        menu_button = pygame.Rect(WIDTH // 2 - 75, 500, 150, 75)
+        mouse_x, mouse_y = pygame.mouse.get_pos()
+        is_hovered = menu_button.collidepoint(mouse_x, mouse_y)
+        current_color = GOLD if is_hovered else YELLOW
+        pygame.draw.rect(screen, current_color, menu_button, border_radius=15)
+        menu_text = font.render("Menu", True, BLACK)
+        screen.blit(
+            menu_text,
+            (menu_button.centerx - menu_text.get_width() // 2, menu_button.centery - menu_text.get_height() // 2)
+        )
 
-# Start the game loop
-game_loop()
+        if pygame.mouse.get_pressed()[0] and is_hovered:
+            return_to_menu()
 
-# Quit Pygame
-pygame.quit()
+        pygame.display.flip()
+
+
+if __name__ == "__main__":
+    diceMain()
