@@ -1,53 +1,48 @@
 import pygame
 import subprocess
-from BJGUI import main
+from blackjack import blackjackMain
+from roulette import rouletteMain
+from dice import diceMain
 
 # Initialize Pygame
 pygame.init()
 
-# Load the casino background image
+# Screen dimensions
 WIDTH, HEIGHT = 800, 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Cal State Casino")
 
-# Load and scale the background image
-background_image = pygame.image.load('casino_background.jpg')
-background_image = pygame.transform.scale(background_image, (WIDTH, HEIGHT))
+# Define green background color
+GREEN_BG = (53, 101, 77)
 
 # Set up fonts
-title_font = pygame.font.SysFont('comicsansms', 80)  # Larger font for the title
-font = pygame.font.SysFont('comicsansms', 50)        # Smaller font for buttons
+title_font = pygame.font.SysFont('comicsansms', 80)
+font = pygame.font.SysFont('comicsansms', 50)      
 
 # Define button properties
-button_color = (255, 215, 0)  # Gold-like button color
-hover_color = (255, 255, 0)   # Lighter gold when hovering
-text_color = (0, 0, 0)        # Black text
-button_width, button_height = 400, 75    # Button dimensions
-border_radius = 20                      # Round corners for buttons
+GOLD = (255, 215, 0)
+YELLOW = (255, 255, 0)
+BLACK = (0, 0, 0)
+button_width, button_height = 400, 75 
+border_radius = 20                   
 
 # Function to draw text on the screen
 def draw_text(text, font, color, x, y):
     text_obj = font.render(text, True, color)
     screen.blit(text_obj, (x, y))
 
-# Function to draw buttons with rounded corners
+# Function to draw buttons
 def draw_button(text, x, y, width, height, hovered, border_radius):
-    color = hover_color if hovered else button_color
+    color = GOLD if hovered else YELLOW
     pygame.draw.rect(screen, color, (x, y, width, height), border_radius=border_radius)
-    draw_text(text, font, text_color, x + (width - font.size(text)[0]) // 2, y + (height - font.size(text)[1]) // 2)
-
-# Function to run external game files
-def run_game(file_name):
-    try:
-        subprocess.run(['python', file_name], check=True)
-    except subprocess.CalledProcessError as e:
-        print(f"Error running {file_name}: {e}")
+    draw_text(text, font, BLACK, x + (width - font.size(text)[0]) // 2, y + (height - font.size(text)[1]) // 2)
 
 # Main game loop
 def main_menu():
     running = True
     while running:
-        screen.blit(background_image, (0, 0))  # Draw background
+        # Fill the background with green
+        screen.fill(GREEN_BG)
 
         # Get mouse position
         mouse_x, mouse_y = pygame.mouse.get_pos()
@@ -72,11 +67,11 @@ def main_menu():
                 for (x, y, text) in button_positions:
                     if x <= mouse_x <= x + button_width and y <= mouse_y <= y + button_height:
                         if text == "Play Roulette":
-                            run_game('roulette.py')
+                            rouletteMain()
                         elif text == "Play Blackjack":
-                            main()
+                            blackjackMain()
                         elif text == "Play Dice":
-                            run_game('dice.py')
+                            diceMain()
                         elif text == "Exit":
                             running = False
                             pygame.quit()
